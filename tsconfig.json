@@ -1,18 +1,25 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "target": "es2018",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "noEmitOnError": true,
+    "target": "ES2019",
+    "lib": ["ES2019", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+
     "strict": true,
-    "esModuleInterop": false,
+    "noEmitOnError": true,
     "declaration": true,
+
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+
     "outDir": "out-tsc",
-    "rootDir": "./",
+    "rootDir": ".",
+
     "paths": {
-      "src/*": ["src/*"]
-    }
+      "src/*": ["src/*"],
+    },
   },
-  "include": ["./src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
 }
