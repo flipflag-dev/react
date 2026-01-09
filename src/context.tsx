@@ -48,14 +48,12 @@ export function FlipFlagProvider(props: {
   }
 
   useEffect(() => {
-    let mounted = true;
-
     (async () => {
       try {
         await managerRef.current!.init();
-        if (mounted) setReady(true);
+        setReady(true);
       } catch (e) {
-        if (mounted) setError(e);
+        setError(e);
       }
     })();
 
@@ -64,10 +62,8 @@ export function FlipFlagProvider(props: {
     }, refreshIntervalMs);
 
     return () => {
-      mounted = false;
       window.clearInterval(id);
       managerRef.current?.destroy();
-      managerRef.current = null;
     };
   }, [refreshIntervalMs]);
 
