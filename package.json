@@ -1,0 +1,105 @@
+{
+  "name": "@flipflag/react",
+  "version": "0.0.0",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "description": "React bindings for FlipFlag SDK (works with React and Next.js)",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "FlipFlag",
+    "Feature Flags",
+    "Feature Toggle",
+    "Client SDK",
+    "Flag Management",
+    "Remote Config",
+    "Integration",
+    "JavaScript",
+    "TypeScript",
+    "SDK",
+    "React",
+    "NextJS"
+  ],
+  "scripts": {
+    "build": "rimraf dist && rollup -c rollup.config.js",
+    "typecheck": "tsc --noEmit",
+    "prettier:formatting": "npx prettier --write ./src",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flipflag-dev/react.git"
+  },
+  "author": "Polevov Evgenii <epolevov@emd.one>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flipflag-dev/sdk/issues"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "repositoryUrl": "https://github.com/flipflag-dev/react.git",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/git",
+        {
+          "message": "chore(release): ${nextRelease.version} \n\n${nextRelease.notes}"
+        }
+      ],
+      "@semantic-release/github"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "overrides": {
+    "@semantic-release/npm": {
+      "npm": "11.7.0"
+    }
+  },
+  "homepage": "https://github.com/flipflag-dev/react.git#readme",
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@rollup/plugin-alias": "^6.0.0",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@semantic-release/npm": "^13.1.3",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "@types/jest": "^30.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.0.1",
+    "@types/react": "^19.2.7",
+    "jest": "^30.2.0",
+    "rimraf": "^6.1.2",
+    "rollup": "^4.53.3",
+    "rollup-plugin-dts": "^6.2.3",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "ts-jest": "^29.4.5"
+  },
+  "peerDependencies": {
+    "@flipflag/sdk": ">=0.0.0",
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react-dom": {
+      "optional": true
+    }
+  }
+}
