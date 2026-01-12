@@ -11,6 +11,7 @@ import { FlipFlag } from "@flipflag/sdk";
 export type FlipFlagReactOptions = ConstructorParameters<typeof FlipFlag>[0] & {
   refreshIntervalMs?: number;
   initialFlags?: Record<string, boolean>;
+  startClient?: boolean;
 };
 
 type Ctx = {
@@ -30,6 +31,7 @@ export function FlipFlagProvider(props: {
   const { options, children } = props;
 
   const refreshIntervalMs = options.refreshIntervalMs ?? 10_000;
+  const startClient = options.startClient ?? true;
 
   const managerRef = useRef<FlipFlag | null>(null);
   const initialFlagsRef = useRef<Record<string, boolean>>(
@@ -40,7 +42,7 @@ export function FlipFlagProvider(props: {
   const [error, setError] = useState<unknown>(null);
   const [tick, setTick] = useState(0);
 
-  if (!managerRef.current) {
+  if (!managerRef.current && startClient) {
     managerRef.current = new FlipFlag({
       ...options,
       ignoreMissingConfig: options.ignoreMissingConfig ?? true,
@@ -48,12 +50,27 @@ export function FlipFlagProvider(props: {
   }
 
   useEffect(() => {
+    if (!startClient) {
+      setReady(false);
+      setError(null);
+      return;
+    }
+
+    if (!managerRef.current) {
+      managerRef.current = new FlipFlag({
+        ...options,
+        ignoreMissingConfig: options.ignoreMissingConfig ?? true,
+      });
+    }
+
+    let cancelled = false;
+
     (async () => {
       try {
         await managerRef.current!.init();
-        setReady(true);
+        if (!cancelled) setReady(true);
       } catch (e) {
-        setError(e);
+        if (!cancelled) setError(e);
       }
     })();
 
@@ -62,10 +79,12 @@ export function FlipFlagProvider(props: {
     }, refreshIntervalMs);
 
     return () => {
+      cancelled = true;
       window.clearInterval(id);
       managerRef.current?.destroy();
+      managerRef.current = null;
     };
-  }, [refreshIntervalMs]);
+  }, [startClient, refreshIntervalMs, options]);
 
   const value = useMemo<Ctx>(() => {
     const getFlag = (name: string, fallback = false) => {
