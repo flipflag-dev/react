@@ -7,12 +7,47 @@ import React, {
   useState,
 } from "react";
 import { FlipFlag } from "@flipflag/sdk";
+import { FLIPFLAG_HYDRATION_ID } from "./server/hydration";
 
-export type FlipFlagReactOptions = ConstructorParameters<typeof FlipFlag>[0] & {
+/**
+ * Read hydrated flag data from the server-rendered script tag.
+ * Returns undefined if not in browser or script tag not found.
+ */
+function getHydratedFlags(): Record<string, boolean> | undefined {
+  if (typeof document === "undefined") return undefined;
+
+  const script = document.getElementById(FLIPFLAG_HYDRATION_ID);
+  if (!script?.textContent) return undefined;
+
+  try {
+    return JSON.parse(script.textContent);
+  } catch {
+    return undefined;
+  }
+}
+
+type BaseOptions = {
   refreshIntervalMs?: number;
   initialFlags?: Record<string, boolean>;
   startClient?: boolean;
 };
+
+/** When providing an existing instance, SDK config options are not needed */
+type WithInstance = BaseOptions & {
+  instance: FlipFlag;
+  publicKey?: never;
+  privateKey?: never;
+  apiUrl?: never;
+  configPath?: never;
+  ignoreMissingConfig?: never;
+};
+
+/** When creating a new instance, SDK config options are required */
+type WithConfig = BaseOptions & ConstructorParameters<typeof FlipFlag>[0] & {
+  instance?: never;
+};
+
+export type FlipFlagReactOptions = WithInstance | WithConfig;
 
 type Ctx = {
   manager: FlipFlag | null;
@@ -34,8 +69,9 @@ export function FlipFlagProvider(props: {
   const startClient = options.startClient ?? true;
 
   const managerRef = useRef<FlipFlag | null>(null);
+  // Priority: 1) explicit initialFlags, 2) hydrated from script tag, 3) empty
   const initialFlagsRef = useRef<Record<string, boolean>>(
-    options.initialFlags ?? {},
+    options.initialFlags ?? getHydratedFlags() ?? {},
   );
 
   const [ready, setReady] = useState(false);
@@ -43,7 +79,7 @@ export function FlipFlagProvider(props: {
   const [tick, setTick] = useState(0);
 
   if (!managerRef.current && startClient) {
-    managerRef.current = new FlipFlag({
+    managerRef.current = options.instance ?? new FlipFlag({
       ...options,
       ignoreMissingConfig: options.ignoreMissingConfig ?? true,
     });
@@ -57,7 +93,7 @@ export function FlipFlagProvider(props: {
     }
 
     if (!managerRef.current) {
-      managerRef.current = new FlipFlag({
+      managerRef.current = options.instance ?? new FlipFlag({
         ...options,
         ignoreMissingConfig: options.ignoreMissingConfig ?? true,
       });
