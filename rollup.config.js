@@ -40,9 +40,14 @@ const isExternal = (id) => {
   );
 };
 
+const inputs = {
+  index: "src/index.ts",
+  "server/index": "src/server/index.ts",
+};
+
 const bundle = (config) => ({
   ...config,
-  input: "src/index.ts",
+  input: inputs,
   external: isExternal,
 });
 

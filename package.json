@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js",
+      "default": "./dist/server/index.js"
     }
   },
   "files": [
@@ -93,7 +98,7 @@
     "ts-jest": "^29.4.5"
   },
   "peerDependencies": {
-    "@flipflag/sdk": ">=0.0.0",
+    "@flipflag/sdk": ">=1.2.0",
     "react": ">=18",
     "react-dom": ">=18"
   },
