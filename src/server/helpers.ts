@@ -15,16 +15,17 @@ import type { FlipFlag } from "@flipflag/sdk";
  * const flags = await getFlags(sdk, ['darkMode', 'newFeature']);
  * ```
  */
-export async function getFlags(
+export function getFlags(
   sdk: FlipFlag,
   flagNames: string[]
-): Promise<Record<string, boolean>> {
+): Record<string, boolean> {
   const flags: Record<string, boolean> = {};
 
   for (const name of flagNames) {
     try {
       flags[name] = sdk.isEnabled(name);
-    } catch {
+    } catch (error) {
+      console.error(`Failed to fetch flag "${name}"`, error);
       flags[name] = false;
     }
   }

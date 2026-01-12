@@ -21,7 +21,8 @@ function getHydratedFlags(): Record<string, boolean> | undefined {
 
   try {
     return JSON.parse(script.textContent);
-  } catch {
+  } catch (error) {
+    console.warn("[FlipFlag] Failed to parse hydrated flags JSON from script element with id:", FLIPFLAG_HYDRATION_ID, error);
     return undefined;
   }
 }
@@ -48,6 +49,11 @@ type WithConfig = BaseOptions & ConstructorParameters<typeof FlipFlag>[0] & {
 };
 
 export type FlipFlagReactOptions = WithInstance | WithConfig;
+
+/** Type guard to check if options contains an existing FlipFlag instance */
+function hasInstance(opts: FlipFlagReactOptions): opts is WithInstance {
+  return "instance" in opts && opts.instance != null;
+}
 
 type Ctx = {
   manager: FlipFlag | null;
@@ -79,10 +85,14 @@ export function FlipFlagProvider(props: {
   const [tick, setTick] = useState(0);
 
   if (!managerRef.current && startClient) {
-    managerRef.current = options.instance ?? new FlipFlag({
-      ...options,
-      ignoreMissingConfig: options.ignoreMissingConfig ?? true,
-    });
+    if (hasInstance(options)) {
+      managerRef.current = options.instance;
+    } else {
+      managerRef.current = new FlipFlag({
+        ...options,
+        ignoreMissingConfig: options.ignoreMissingConfig ?? true,
+      });
+    }
   }
 
   useEffect(() => {
@@ -93,10 +103,14 @@ export function FlipFlagProvider(props: {
     }
 
     if (!managerRef.current) {
-      managerRef.current = options.instance ?? new FlipFlag({
-        ...options,
-        ignoreMissingConfig: options.ignoreMissingConfig ?? true,
-      });
+      if (hasInstance(options)) {
+        managerRef.current = options.instance;
+      } else {
+        managerRef.current = new FlipFlag({
+          ...options,
+          ignoreMissingConfig: options.ignoreMissingConfig ?? true,
+        });
+      }
     }
 
     let cancelled = false;
