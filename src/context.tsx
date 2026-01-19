@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -22,7 +23,11 @@ function getHydratedFlags(): Record<string, boolean> | undefined {
   try {
     return JSON.parse(script.textContent);
   } catch (error) {
-    console.warn("[FlipFlag] Failed to parse hydrated flags JSON from script element with id:", FLIPFLAG_HYDRATION_ID, error);
+    console.warn(
+      "[FlipFlag] Failed to parse hydrated flags JSON from script element with id:",
+      FLIPFLAG_HYDRATION_ID,
+      error,
+    );
     return undefined;
   }
 }
@@ -44,14 +49,23 @@ type WithInstance = BaseOptions & {
 };
 
 /** When creating a new instance, SDK config options are required */
-type WithConfig = BaseOptions & ConstructorParameters<typeof FlipFlag>[0] & {
-  instance?: never;
-};
+type WithConfig = BaseOptions &
+  ConstructorParameters<typeof FlipFlag>[0] & {
+    instance?: never;
+  };
 
 export type FlipFlagReactOptions = WithInstance | WithConfig;
 
+/** Extract stable SDK config without refresh/lifecycle options */
+type SDKConfig = Omit<
+  FlipFlagReactOptions,
+  "refreshIntervalMs" | "initialFlags" | "startClient"
+>;
+
 /** Type guard to check if options contains an existing FlipFlag instance */
-function hasInstance(opts: FlipFlagReactOptions): opts is WithInstance {
+function hasInstance(
+  opts: FlipFlagReactOptions | SDKConfig,
+): opts is WithInstance {
   return "instance" in opts && opts.instance != null;
 }
 
@@ -80,20 +94,21 @@ export function FlipFlagProvider(props: {
     options.initialFlags ?? getHydratedFlags() ?? {},
   );
 
+  // Stable SDK config - extract only SDK-related options, memoized by their values
+  const sdkConfig = useMemo<SDKConfig>(() => {
+    if (hasInstance(options)) {
+      return { instance: options.instance };
+    }
+    const { refreshIntervalMs, initialFlags, startClient, ...config } = options;
+    return config;
+  }, [
+    hasInstance(options) ? options.instance : null,
+    hasInstance(options) ? null : JSON.stringify(options),
+  ]);
+
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [tick, setTick] = useState(0);
-
-  if (!managerRef.current && startClient) {
-    if (hasInstance(options)) {
-      managerRef.current = options.instance;
-    } else {
-      managerRef.current = new FlipFlag({
-        ...options,
-        ignoreMissingConfig: options.ignoreMissingConfig ?? true,
-      });
-    }
-  }
 
   useEffect(() => {
     if (!startClient) {
@@ -102,13 +117,22 @@ export function FlipFlagProvider(props: {
       return;
     }
 
+    // Create instance only if it doesn't exist
     if (!managerRef.current) {
-      if (hasInstance(options)) {
-        managerRef.current = options.instance;
+      if (hasInstance(sdkConfig)) {
+        managerRef.current = sdkConfig.instance;
       } else {
+        // Type assertion: we know sdkConfig is WithConfig here
+        const config = sdkConfig as Omit<
+          WithConfig,
+          "refreshIntervalMs" | "initialFlags" | "startClient"
+        >;
         managerRef.current = new FlipFlag({
-          ...options,
-          ignoreMissingConfig: options.ignoreMissingConfig ?? true,
+          publicKey: config.publicKey,
+          privateKey: config.privateKey,
+          apiUrl: config.apiUrl,
+          configPath: config.configPath,
+          ignoreMissingConfig: config.ignoreMissingConfig ?? true,
         });
       }
     }
@@ -131,13 +155,17 @@ export function FlipFlagProvider(props: {
     return () => {
       cancelled = true;
       window.clearInterval(id);
-      managerRef.current?.destroy();
-      managerRef.current = null;
+      // Only destroy if we created the instance (not when instance was provided)
+      if (!hasInstance(sdkConfig)) {
+        managerRef.current?.destroy();
+        managerRef.current = null;
+      }
     };
-  }, [startClient, refreshIntervalMs, options]);
+  }, [startClient, refreshIntervalMs, sdkConfig]);
 
-  const value = useMemo<Ctx>(() => {
-    const getFlag = (name: string, fallback = false) => {
+  // Stabilize getFlag function - memoize it so hooks don't re-run unnecessarily
+  const getFlag = useCallback(
+    (name: string, fallback = false) => {
       const mgr = managerRef.current;
       if (!mgr) return initialFlagsRef.current[name] ?? fallback;
       if (!ready) return initialFlagsRef.current[name] ?? fallback;
@@ -147,8 +175,11 @@ export function FlipFlagProvider(props: {
       } catch {
         return initialFlagsRef.current[name] ?? fallback;
       }
-    };
+    },
+    [ready],
+  );
 
+  const value = useMemo<Ctx>(() => {
     return {
       manager: managerRef.current,
       ready,
@@ -156,7 +187,7 @@ export function FlipFlagProvider(props: {
       getFlag,
       tick,
     };
-  }, [ready, error, tick]);
+  }, [ready, error, getFlag, tick]);
 
   return (
     <FlipFlagContext.Provider value={value}>

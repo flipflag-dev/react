@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { useFlipFlagContext } from "./context";
 
 export function useFlipFlagReady() {
@@ -21,9 +21,12 @@ export function useFlags<T extends readonly string[]>(
 ): Record<T[number], boolean> {
   const { getFlag, tick } = useFlipFlagContext();
 
+  // Stabilize names array reference to prevent unnecessary re-computations
+  const namesKey = JSON.stringify(names);
+
   return useMemo(() => {
     const out: Record<string, boolean> = {};
     for (const n of names) out[n] = getFlag(n, fallback);
     return out as Record<T[number], boolean>;
-  }, [names, fallback, getFlag, tick]);
+  }, [namesKey, fallback, getFlag, tick]);
 }
