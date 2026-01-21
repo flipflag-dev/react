@@ -127,15 +127,7 @@ export function FlipFlagProvider(props: {
           WithConfig,
           "refreshIntervalMs" | "initialFlags" | "startClient"
         >;
-        managerRef.current = new FlipFlag({
-          publicKey: config.publicKey,
-          privateKey: config.privateKey,
-          apiUrl: config.apiUrl,
-          configPath: config.configPath,
-          ignoreMissingConfig: config.ignoreMissingConfig ?? true,
-          pollingInterval: config.pollingInterval,
-          syncInterval: config.syncInterval,
-        });
+        managerRef.current = new FlipFlag(config);
       }
     }
 
