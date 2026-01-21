@@ -133,6 +133,8 @@ export function FlipFlagProvider(props: {
           apiUrl: config.apiUrl,
           configPath: config.configPath,
           ignoreMissingConfig: config.ignoreMissingConfig ?? true,
+          pollingInterval: config.pollingInterval,
+          syncInterval: config.syncInterval,
         });
       }
     }
